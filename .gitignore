@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 venv/
+
+# Generated feeds -- built and deployed to Pages by CI, not committed.
+docs/

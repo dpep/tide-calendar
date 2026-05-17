@@ -9,9 +9,9 @@ slack water, max ebb, max flood — for SF Bay stations.
   plus PyYAML; no other dependencies.
 - `stations.yaml` — the config and the only file most changes touch. One entry
   per published feed.
-- `docs/` — generated output, committed and served by GitHub Pages. Do not
-  hand-edit; `generate.py` overwrites it.
-- `.github/workflows/update.yml` — weekly regeneration + commit.
+- `docs/` — generated output, gitignored. CI builds it and deploys it to
+  GitHub Pages as an artifact; `generate.py` overwrites it locally too.
+- `.github/workflows/update.yml` — monthly regeneration + Pages deploy.
 
 ## Data source
 

@@ -2,11 +2,19 @@ name: Update tide calendars
 
 on:
   schedule:
-    - cron: "17 9 * * 0"   # weekly (Sun), ~02:17 America/Los_Angeles
+    - cron: "17 9 1 * *"   # monthly (1st), ~02:17 America/Los_Angeles
   workflow_dispatch: {}     # allow manual runs
 
+# Generated feeds are deployed straight to Pages as an artifact -- never
+# committed -- so git history does not accumulate large .ics files.
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -23,10 +31,18 @@ jobs:
       - name: Generate .ics feeds
         run: python generate.py
 
-      - name: Commit updated feeds
-        run: |
-          git config user.name  "tide-calendar bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add docs
-          git diff --cached --quiet || git commit -m "Update tide calendars"
-          git push
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

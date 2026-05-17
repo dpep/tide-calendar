@@ -147,7 +147,7 @@ def vevent(when, kind, speed, station_id, description=None, geo=None):
     return "\r\n".join(folded) + "\r\n"
 
 
-def write_ics(path, calname, body):
+def write_ics(path, calname, body, refresh):
     head = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
@@ -156,8 +156,8 @@ def write_ics(path, calname, body):
         "METHOD:PUBLISH",
         f"X-WR-CALNAME:{esc(calname)}",
         "X-WR-TIMEZONE:America/Los_Angeles",
-        "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
-        "X-PUBLISHED-TTL:PT12H",
+        f"REFRESH-INTERVAL;VALUE=DURATION:{refresh}",
+        f"X-PUBLISHED-TTL:{refresh}",
     ]
     text = "\r\n".join(head) + "\r\n" + body + "END:VCALENDAR\r\n"
     path.write_text(text, encoding="utf-8")
@@ -244,6 +244,7 @@ def main():
     cfg = yaml.safe_load((ROOT / "stations.yaml").read_text())
     days_ahead = int(cfg.get("days_ahead", 60))
     days_back = int(cfg.get("days_back", 7))
+    refresh = f"P{int(cfg.get('refresh_days', 7))}D"  # iCalendar DURATION
     DOCS.mkdir(exist_ok=True)
     (DOCS / ".nojekyll").write_text("")  # serve files verbatim
 
@@ -262,7 +263,7 @@ def main():
             continue
 
         body = "".join(vevent(w, k, v, sid, desc, geo) for w, k, v in evs)
-        write_ics(DOCS / f"{slug}.ics", f"Tides @ {name}", body)
+        write_ics(DOCS / f"{slug}.ics", f"Tides @ {name}", body, refresh)
         feeds.append((slug, name, sid, len(evs)))
         print(f"  ✓ {slug}: {len(evs)} events")
 

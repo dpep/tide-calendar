@@ -14,10 +14,14 @@
 # `lat`/`lon` are filled in automatically on the first run (looked up from
 # NOAA) and cached here so later runs skip the metadata lookup.
 
-# How far the feeds reach. `days_back` keeps recent history so a refresh
-# doesn't wipe past events from the calendar view.
-days_back: 7
-days_ahead: 60
+# How far the feeds reach. A wide window means a calendar that refreshes
+# infrequently still has plenty of events; `days_back` keeps recent history.
+days_back: 30
+days_ahead: 90
+
+# How often calendar clients are asked to re-fetch the feed (a hint many,
+# including Google Calendar, largely ignore for URL subscriptions).
+refresh_days: 7
 
 stations:
   - slug: alcatraz
