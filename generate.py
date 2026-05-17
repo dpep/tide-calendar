@@ -34,10 +34,15 @@ EVENT_DURATION = dt.timedelta(minutes=30)
 STAMP = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
-def fetch(station_id, current_bin, days):
-    """Return the list of current-prediction rows for a station."""
-    begin = dt.date.today()
-    end = begin + dt.timedelta(days=days)
+def fetch(station_id, current_bin, days_back, days_ahead):
+    """Return the list of current-prediction rows for a station.
+
+    The window starts `days_back` days in the past so a refresh keeps recent
+    history rather than dropping events the moment they occur.
+    """
+    today = dt.date.today()
+    begin = today - dt.timedelta(days=days_back)
+    end = today + dt.timedelta(days=days_ahead)
     params = {
         "begin_date": begin.strftime("%Y%m%d"),
         "end_date": end.strftime("%Y%m%d"),
@@ -237,7 +242,8 @@ def cache_coords(fetched):
 
 def main():
     cfg = yaml.safe_load((ROOT / "stations.yaml").read_text())
-    days = int(cfg.get("days_ahead", 60))
+    days_ahead = int(cfg.get("days_ahead", 60))
+    days_back = int(cfg.get("days_back", 7))
     DOCS.mkdir(exist_ok=True)
     (DOCS / ".nojekyll").write_text("")  # serve files verbatim
 
@@ -249,7 +255,7 @@ def main():
             geo = (st["lat"], st["lon"]) if "lat" in st and "lon" in st else None
             if geo is None:
                 geo = fetched[sid] = station_geo(sid)
-            evs = list(events(fetch(sid, st.get("bin"), days)))
+            evs = list(events(fetch(sid, st.get("bin"), days_back, days_ahead)))
         except Exception as exc:  # noqa: BLE001 - report and continue
             print(f"  ! {slug}: {exc}", file=sys.stderr)
             failures.append(f"{slug} ({exc})")

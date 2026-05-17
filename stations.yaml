@@ -14,6 +14,9 @@
 # `lat`/`lon` are filled in automatically on the first run (looked up from
 # NOAA) and cached here so later runs skip the metadata lookup.
 
+# How far the feeds reach. `days_back` keeps recent history so a refresh
+# doesn't wipe past events from the calendar view.
+days_back: 7
 days_ahead: 60
 
 stations:
