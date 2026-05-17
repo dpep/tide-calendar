@@ -10,39 +10,91 @@
 # `bin` selects the depth layer (SF Bay stations report several). The values
 # below are the shallowest bin -- closest to the surface current a boat
 # actually feels. Adjust or omit if NOAA rejects it.
+#
+# `lat`/`lon` are filled in automatically on the first run (looked up from
+# NOAA) and cached here so later runs skip the metadata lookup.
 
 days_ahead: 60
 
 stations:
-  - slug: golden-gate
-    name: Golden Gate
-    id: SFB1203          # Golden Gate Bridge, 0.46 nm E of
-    bin: 18
-
-  - slug: bay-entrance
-    name: SF Bay Entrance
-    id: SFB1201          # San Francisco Bay Entrance (Outside)
-    bin: 26
-
   - slug: alcatraz
     name: Alcatraz Island
-    id: SFB1204          # Alcatraz Island, southwest of
+    id: SFB1204
+    lat: 37.81425
+    lon: -122.432
     bin: 18
-
-  - slug: raccoon-strait
-    name: Raccoon Strait
-    id: SFB1212          # Raccoon Strait
-    bin: 9
+    description: Alcatraz Island, southwest of (station SFB1204)
 
   - slug: bay-bridge
     name: Bay Bridge
-    id: SFB1207          # Bay Bridge, Pier D
+    id: SFB1207
+    lat: 37.80093
+    lon: -122.37387
     bin: 18
+    description: Bay Bridge, Pier D (station SFB1207)
+
+  - slug: bay-entrance
+    name: SF Bay Entrance
+    id: SFB1201
+    lat: 37.8106
+    lon: -122.502
+    bin: 26
+    description: San Francisco Bay Entrance, outside (station SFB1201)
+
+  - slug: carquinez
+    name: Carquinez Strait
+    id: SFB1319
+    lat: 38.06138
+    lon: -122.21823
+    bin: 10
+    description: Carquinez Strait (station SFB1319)
+
+  - slug: golden-gate
+    name: Golden Gate
+    id: SFB1203
+    lat: 37.82007
+    lon: -122.473
+    bin: 18
+    description: Golden Gate Bridge, 0.46 nm E of (station SFB1203)
+
+  - slug: oakland-harbor
+    name: Oakland Inner Harbor
+    id: SFB1213
+    lat: 37.795
+    lon: -122.3183
+    bin: 12
+    description: Oakland Inner Harbor Channel (station SFB1213)
+
+  - slug: raccoon-strait
+    name: Raccoon Strait
+    id: SFB1212
+    lat: 37.87192
+    lon: -122.44197
+    bin: 9
+    description: Raccoon Strait (station SFB1212)
 
   - slug: san-pablo
     name: Point San Pablo
-    id: SFB1312          # Point San Pablo, midchannel
+    id: SFB1312
+    lat: 37.96888
+    lon: -122.43913
     bin: 16
+    description: Point San Pablo, midchannel (station SFB1312)
+
+  - slug: san-rafael
+    name: San Rafael
+    id: PCT0681
+    lat: 37.94117
+    lon: -122.46167
+    description: Point San Quentin, 0.82 nmi E (station PCT0681)
+
+  - slug: yerba-buena
+    name: Yerba Buena Island
+    id: SFB1209
+    lat: 37.81003
+    lon: -122.38307
+    bin: 23
+    description: Yerba Buena Island, west of midchannel (station SFB1209)
 
   # More SF Bay stations -- uncomment to publish:
   #
@@ -50,15 +102,3 @@ stations:
   #   name: San Mateo Bridge
   #   id: SFB1305
   #   bin: 7
-  # - slug: carquinez
-  #   name: Carquinez Strait
-  #   id: SFB1319
-  #   bin: 10
-  # - slug: yerba-buena
-  #   name: Yerba Buena Island
-  #   id: SFB1209
-  #   bin: 23
-  # - slug: oakland-harbor
-  #   name: Oakland Inner Harbor
-  #   id: SFB1213
-  #   bin: 12

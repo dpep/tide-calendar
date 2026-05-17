@@ -63,10 +63,3 @@ remove, or comment out entries to pick locations. `bin` selects the depth layer
 
 Full, searchable list:
 [NOAA Current Predictions map](https://tidesandcurrents.noaa.gov/map/index.html?type=CurrentPredictions).
-
-## Notes
-
-- NOAA blocks some datacenter IP ranges. If a scheduled run fails with
-  `Forbidden`, run `python generate.py` locally and commit `docs/` instead, or
-  switch the Action to a self-hosted runner.
-- Predictions are NOAA estimates, not for navigation.

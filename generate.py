@@ -3,8 +3,8 @@
 
 For each station in stations.yaml this fetches the NOAA CO-OPS
 currents_predictions product (slack water, max ebb, max flood) and writes
-one .ics feed per station plus a combined feed into docs/, ready to be
-served by GitHub Pages and subscribed to from Google Calendar.
+one .ics feed per station into docs/, ready to be served by GitHub Pages
+and subscribed to from Google Calendar.
 
 Run locally:  python generate.py
 """
@@ -18,14 +18,14 @@ from pathlib import Path
 
 import yaml
 
-API = "https://api.tidesandcurrents.noaa.gov/api/datagetter"
+API = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
+MDAPI = "https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations"
 ROOT = Path(__file__).parent
 DOCS = ROOT / "docs"
 
 # UID domain — only needs to be stable/unique, it is never resolved.
 UID_DOMAIN = "tides.dpepper.net"
 
-EMOJI = {"slack": "⚪", "ebb": "\U0001f534", "flood": "\U0001f7e2"}
 LABEL = {"slack": "Slack", "ebb": "Max Ebb", "flood": "Max Flood"}
 
 STAMP = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -64,6 +64,17 @@ def fetch(station_id, current_bin, days):
     return rows
 
 
+def station_geo(station_id):
+    """Return (lat, lon) for a station from NOAA's metadata API."""
+    url = f"{MDAPI}/{station_id}.json?type=currentpredictions"
+    req = urllib.request.Request(url, headers={"User-Agent": "tide-calendar"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        stations = json.load(resp).get("stations", [])
+    if not stations:
+        raise RuntimeError("station not found in metadata API")
+    return float(stations[0]["lat"]), float(stations[0]["lng"])
+
+
 def events(rows):
     """Yield (utc_datetime, type, velocity_knots) for each prediction."""
     for row in rows:
@@ -95,13 +106,11 @@ def fold(line):
     return out
 
 
-def vevent(when, kind, speed, station_id, location):
+def vevent(when, kind, speed, station_id, description=None, geo=None):
     """Build one folded VEVENT block (a zero-duration point event)."""
-    summary = f"{EMOJI[kind]} {LABEL[kind]}"
+    summary = LABEL[kind]
     if speed is not None and kind != "slack":
-        summary += f" {speed:.1f} kn"
-    if location:
-        summary += f" — {location}"
+        summary += f": {speed:.1f} kn"
 
     ts = when.strftime("%Y%m%dT%H%M%SZ")
     raw = [
@@ -110,6 +119,14 @@ def vevent(when, kind, speed, station_id, location):
         f"DTSTAMP:{STAMP}",
         f"DTSTART:{ts}",  # no DTEND -> zero duration (RFC 5545)
         f"SUMMARY:{esc(summary)}",
+    ]
+    if description:
+        raw.append(f"DESCRIPTION:{esc(description)}")
+    if geo:
+        lat, lon = geo
+        raw.append(f"GEO:{lat:.5f};{lon:.5f}")
+        raw.append(f"LOCATION:{esc(f'{lat:.5f}, {lon:.5f}')}")
+    raw += [
         "TRANSP:TRANSPARENT",            # don't mark the user as busy
         "X-MICROSOFT-CDO-BUSYSTATUS:FREE",
         "END:VEVENT",
@@ -165,7 +182,6 @@ address of an <code>.ics</code> link below (right-click &rarr; copy link).</p>
   <thead><tr><th>Location</th><th>NOAA station</th><th>Events</th><th>Feed</th></tr></thead>
   <tbody>
 {rows}
-      <tr><td><strong>All stations</strong></td><td>&mdash;</td><td>&mdash;</td><td><a href="all.ics">all.ics</a></td></tr>
   </tbody>
 </table>
 <p style="color:#888">Updated {STAMP}. Predictions are NOAA estimates &mdash;
@@ -176,32 +192,52 @@ not for navigation.</p>
     (DOCS / "index.html").write_text(html, encoding="utf-8")
 
 
+def cache_coords(fetched):
+    """Write freshly-fetched {station_id: (lat, lon)} back into stations.yaml.
+
+    Inserts `lat`/`lon` lines after the matching `id:` line so the next run
+    skips the metadata lookup. Edits text directly to keep comments intact.
+    """
+    path = ROOT / "stations.yaml"
+    out = []
+    for line in path.read_text().splitlines():
+        out.append(line)
+        key = line.split("#", 1)[0].strip()
+        for sid, (lat, lon) in fetched.items():
+            if key == f"id: {sid}":
+                indent = " " * (len(line) - len(line.lstrip()))
+                out += [f"{indent}lat: {lat}", f"{indent}lon: {lon}"]
+    path.write_text("\n".join(out) + "\n")
+
+
 def main():
     cfg = yaml.safe_load((ROOT / "stations.yaml").read_text())
     days = int(cfg.get("days_ahead", 60))
     DOCS.mkdir(exist_ok=True)
     (DOCS / ".nojekyll").write_text("")  # serve files verbatim
 
-    combined, feeds, failures = [], [], []
+    feeds, failures, fetched = [], [], {}
     for st in cfg["stations"]:
         slug, name, sid = st["slug"], st["name"], st["id"]
+        desc = st.get("description")
         try:
+            geo = (st["lat"], st["lon"]) if "lat" in st and "lon" in st else None
+            if geo is None:
+                geo = fetched[sid] = station_geo(sid)
             evs = list(events(fetch(sid, st.get("bin"), days)))
         except Exception as exc:  # noqa: BLE001 - report and continue
             print(f"  ! {slug}: {exc}", file=sys.stderr)
             failures.append(f"{slug} ({exc})")
             continue
 
-        body = "".join(vevent(w, k, v, sid, None) for w, k, v in evs)
+        body = "".join(vevent(w, k, v, sid, desc, geo) for w, k, v in evs)
         write_ics(DOCS / f"{slug}.ics", f"SF Bay Tides — {name}", body)
-        combined += [(w, k, v, name, sid) for w, k, v in evs]
         feeds.append((slug, name, sid, len(evs)))
         print(f"  ✓ {slug}: {len(evs)} events")
 
-    if combined:
-        combined.sort(key=lambda r: r[0])
-        body = "".join(vevent(w, k, v, sid, loc) for w, k, v, loc, sid in combined)
-        write_ics(DOCS / "all.ics", "SF Bay Tides — All Stations", body)
+    if fetched:
+        cache_coords(fetched)
+        print(f"  cached coordinates for {len(fetched)} station(s)")
 
     write_index(feeds)
 

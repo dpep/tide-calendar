@@ -11,7 +11,7 @@ slack water, max ebb, max flood — for SF Bay stations.
   per published feed.
 - `docs/` — generated output, committed and served by GitHub Pages. Do not
   hand-edit; `generate.py` overwrites it.
-- `.github/workflows/update.yml` — daily regeneration + commit.
+- `.github/workflows/update.yml` — weekly regeneration + commit.
 
 ## Data source
 
@@ -32,8 +32,5 @@ local zone.
 ## Working on this repo
 
 - Test changes with `python generate.py` and inspect `docs/`.
-- NOAA blocks some datacenter IP ranges with HTTP 403 `Forbidden`. If a fetch
-  fails that way, it is an IP block, not a code bug — run from a residential
-  network to verify.
 - Keep `generate.py` dependency-light; do not add an iCalendar library.
 - Adding a location is a `stations.yaml` edit only — no code change needed.
