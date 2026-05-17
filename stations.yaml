@@ -1,0 +1,64 @@
+# Tide-current calendar config.
+#
+# Each entry under `stations:` produces one .ics feed at docs/<slug>.ics.
+# Add, remove, or comment out entries to control which locations are
+# published -- this is the "pick your locations" knob.
+#
+# Find more stations on the NOAA map (filter: Current Predictions):
+#   https://tidesandcurrents.noaa.gov/map/index.html?type=CurrentPredictions
+#
+# `bin` selects the depth layer (SF Bay stations report several). The values
+# below are the shallowest bin -- closest to the surface current a boat
+# actually feels. Adjust or omit if NOAA rejects it.
+
+days_ahead: 60
+
+stations:
+  - slug: golden-gate
+    name: Golden Gate
+    id: SFB1203          # Golden Gate Bridge, 0.46 nm E of
+    bin: 18
+
+  - slug: bay-entrance
+    name: SF Bay Entrance
+    id: SFB1201          # San Francisco Bay Entrance (Outside)
+    bin: 26
+
+  - slug: alcatraz
+    name: Alcatraz Island
+    id: SFB1204          # Alcatraz Island, southwest of
+    bin: 18
+
+  - slug: raccoon-strait
+    name: Raccoon Strait
+    id: SFB1212          # Raccoon Strait
+    bin: 9
+
+  - slug: bay-bridge
+    name: Bay Bridge
+    id: SFB1207          # Bay Bridge, Pier D
+    bin: 18
+
+  - slug: san-pablo
+    name: Point San Pablo
+    id: SFB1312          # Point San Pablo, midchannel
+    bin: 16
+
+  # More SF Bay stations -- uncomment to publish:
+  #
+  # - slug: san-mateo-bridge
+  #   name: San Mateo Bridge
+  #   id: SFB1305
+  #   bin: 7
+  # - slug: carquinez
+  #   name: Carquinez Strait
+  #   id: SFB1319
+  #   bin: 10
+  # - slug: yerba-buena
+  #   name: Yerba Buena Island
+  #   id: SFB1209
+  #   bin: 23
+  # - slug: oakland-harbor
+  #   name: Oakland Inner Harbor
+  #   id: SFB1213
+  #   bin: 12

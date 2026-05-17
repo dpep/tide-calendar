@@ -1,0 +1,32 @@
+name: Update tide calendars
+
+on:
+  schedule:
+    - cron: "17 9 * * *"   # daily, ~02:17 America/Los_Angeles
+  workflow_dispatch: {}     # allow manual runs
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Generate .ics feeds
+        run: python generate.py
+
+      - name: Commit updated feeds
+        run: |
+          git config user.name  "tide-calendar bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs
+          git diff --cached --quiet || git commit -m "Update tide calendars"
+          git push
