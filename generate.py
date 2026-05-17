@@ -28,6 +28,9 @@ UID_DOMAIN = "tides.dpepper.net"
 
 LABEL = {"slack": "Slack", "ebb": "Max Ebb", "flood": "Max Flood"}
 
+# Each prediction is a moment; give it a short block so it shows on a calendar.
+EVENT_DURATION = dt.timedelta(minutes=30)
+
 STAMP = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
@@ -107,17 +110,19 @@ def fold(line):
 
 
 def vevent(when, kind, speed, station_id, description=None, geo=None):
-    """Build one folded VEVENT block (a zero-duration point event)."""
+    """Build one folded VEVENT block (a 30-minute event)."""
     summary = LABEL[kind]
     if speed is not None and kind != "slack":
         summary += f": {speed:.1f} kn"
 
     ts = when.strftime("%Y%m%dT%H%M%SZ")
+    te = (when + EVENT_DURATION).strftime("%Y%m%dT%H%M%SZ")
     raw = [
         "BEGIN:VEVENT",
         f"UID:{station_id}-{ts}-{kind}@{UID_DOMAIN}",
         f"DTSTAMP:{STAMP}",
-        f"DTSTART:{ts}",  # no DTEND -> zero duration (RFC 5545)
+        f"DTSTART:{ts}",
+        f"DTEND:{te}",
         f"SUMMARY:{esc(summary)}",
     ]
     if description:
@@ -157,7 +162,8 @@ def write_index(feeds):
     rows = "\n".join(
         f'      <tr><td>{name}</td><td><code>{sid}</code></td>'
         f'<td>{count}</td>'
-        f'<td><a href="{slug}.ics">{slug}.ics</a></td></tr>'
+        f'<td><button class="copy" data-feed="{slug}.ics">{slug}.ics</button></td>'
+        f'</tr>'
         for slug, name, sid, count in feeds
     )
     html = f"""<!doctype html>
@@ -171,13 +177,16 @@ def write_index(feeds):
   table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; }}
   td, th {{ border-bottom: 1px solid #ddd; padding: .4rem .6rem; text-align: left; }}
   code {{ background: #f3f3f3; padding: 0 .3rem; border-radius: 3px; }}
+  button.copy {{ font: inherit; color: #06c; background: none; border: 0;
+    padding: 0; cursor: pointer; text-decoration: underline; }}
+  button.copy.copied {{ color: #137333; text-decoration: none; }}
 </style>
 </head>
 <body>
 <h1>SF Bay tide-current calendars</h1>
 <p>Slack water, max ebb, and max flood predictions from NOAA. To subscribe in
-Google Calendar: <em>Other calendars &rarr; From URL</em>, and paste the full
-address of an <code>.ics</code> link below (right-click &rarr; copy link).</p>
+Google Calendar: <em>Other calendars &rarr; From URL</em>. Click a feed below
+to copy its URL, then paste it in.</p>
 <table>
   <thead><tr><th>Location</th><th>NOAA station</th><th>Events</th><th>Feed</th></tr></thead>
   <tbody>
@@ -186,6 +195,22 @@ address of an <code>.ics</code> link below (right-click &rarr; copy link).</p>
 </table>
 <p style="color:#888">Updated {STAMP}. Predictions are NOAA estimates &mdash;
 not for navigation.</p>
+<script>
+document.querySelectorAll("button.copy").forEach(function (b) {{
+  b.addEventListener("click", function () {{
+    var url = new URL(b.dataset.feed, location.href).href;
+    navigator.clipboard.writeText(url).then(function () {{
+      var label = b.textContent;
+      b.textContent = "Copied!";
+      b.classList.add("copied");
+      setTimeout(function () {{
+        b.textContent = label;
+        b.classList.remove("copied");
+      }}, 1200);
+    }});
+  }});
+}});
+</script>
 </body>
 </html>
 """
@@ -231,7 +256,7 @@ def main():
             continue
 
         body = "".join(vevent(w, k, v, sid, desc, geo) for w, k, v in evs)
-        write_ics(DOCS / f"{slug}.ics", f"SF Bay Tides — {name}", body)
+        write_ics(DOCS / f"{slug}.ics", f"Tides @ {name}", body)
         feeds.append((slug, name, sid, len(evs)))
         print(f"  ✓ {slug}: {len(evs)} events")
 

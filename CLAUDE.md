@@ -22,7 +22,7 @@ local zone.
 
 ## Conventions
 
-- Events are zero-duration points (`DTSTART`, no `DTEND`) and `TRANSP:TRANSPARENT`
+- Events are 30-minute blocks (`DTSTART`/`DTEND`) marked `TRANSP:TRANSPARENT`
   so they never mark the user busy.
 - `UID` is `{station}-{utc-timestamp}-{type}@tides.dpepper.net` — stable across
   runs so calendar clients update rather than duplicate events.
