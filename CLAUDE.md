@@ -16,7 +16,7 @@ slack water, max ebb, max flood — for SF Bay stations.
 ## Data source
 
 NOAA CO-OPS `currents_predictions` product, `MAX_SLACK` interval, requested in
-GMT. Endpoint: `https://api.tidesandcurrents.noaa.gov/api/datagetter`. Feeds
+GMT. Endpoint: `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter`. Feeds
 emit UTC timestamps (`...Z`); calendar clients render them in the viewer's
 local zone.
 

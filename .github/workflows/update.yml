@@ -1,8 +1,10 @@
 name: Update tide calendars
 
 on:
+  push:
+    branches: [main]        # redeploy on every code change
   schedule:
-    - cron: "17 9 1 * *"   # monthly (1st), ~02:17 America/Los_Angeles
+    - cron: "17 9 1 * *"   # monthly (1st), ~02:17 America/Los_Angeles -- refresh data
   workflow_dispatch: {}     # allow manual runs
 
 # Generated feeds are deployed straight to Pages as an artifact -- never
