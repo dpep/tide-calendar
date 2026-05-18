@@ -35,6 +35,9 @@ EVENT_DURATION = dt.timedelta(minutes=30)
 # NOAA occasionally returns a timeout or empty result; retry before giving up.
 FETCH_ATTEMPTS = 3
 
+# Seconds to pause between station requests, to avoid hammering NOAA.
+REQUEST_PAUSE = 1
+
 STAMP = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
@@ -258,7 +261,9 @@ def main():
     (DOCS / ".nojekyll").write_text("")  # serve files verbatim
 
     feeds, failures, fetched = [], [], {}
-    for st in cfg["stations"]:
+    for i, st in enumerate(cfg["stations"]):
+        if i:
+            time.sleep(REQUEST_PAUSE)  # space out NOAA requests
         slug, name, sid = st["slug"], st["name"], st["id"]
         desc = st.get("description")
         try:
