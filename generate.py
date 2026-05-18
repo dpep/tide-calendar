@@ -210,8 +210,7 @@ to copy its URL, then paste it in.</p>
 {rows}
   </tbody>
 </table>
-<p style="color:#888">Updated {STAMP}. Predictions are NOAA estimates &mdash;
-not for navigation.</p>
+<p style="color:#888">Updated {STAMP}</p>
 <script>
 document.querySelectorAll("button.copy").forEach(function (b) {{
   b.addEventListener("click", function () {{
