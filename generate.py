@@ -12,6 +12,7 @@ Run locally:  python generate.py
 import datetime as dt
 import json
 import sys
+import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -30,6 +31,9 @@ LABEL = {"slack": "Slack", "ebb": "Max Ebb", "flood": "Max Flood"}
 
 # Each prediction is a moment; give it a short block so it shows on a calendar.
 EVENT_DURATION = dt.timedelta(minutes=30)
+
+# NOAA occasionally returns a timeout or empty result; retry before giving up.
+FETCH_ATTEMPTS = 3
 
 STAMP = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
@@ -59,17 +63,22 @@ def fetch(station_id, current_bin, days_back, days_ahead):
 
     url = API + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": "tide-calendar"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.load(resp)
 
-    if "current_predictions" not in data:
-        msg = (data.get("error") or {}).get("message") or data.get("message")
-        raise RuntimeError(msg or str(data)[:200])
-
-    rows = data["current_predictions"].get("cp", [])
-    if not rows:
-        raise RuntimeError("no predictions returned")
-    return rows
+    for attempt in range(1, FETCH_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.load(resp)
+            if "current_predictions" not in data:
+                msg = (data.get("error") or {}).get("message") or data.get("message")
+                raise RuntimeError(msg or str(data)[:200])
+            rows = data["current_predictions"].get("cp", [])
+            if not rows:
+                raise RuntimeError("no predictions returned")
+            return rows
+        except Exception:  # noqa: BLE001 - retry transient NOAA failures
+            if attempt == FETCH_ATTEMPTS:
+                raise
+            time.sleep(2 * attempt)
 
 
 def station_geo(station_id):
